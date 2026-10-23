@@ -88,6 +88,10 @@ def evaluar(df, columnas, modelo, grilla, semilla, k=5):
         P[te] = completar(gs.predict_proba(X[te]), gs.classes_)
     return suavizar(P)
 
+def rps(y, P):
+    """Ranked Probability Score (Constantinou & Fenton, 2012); menor es mejor."""
+    Y = np.eye(len(CLASES))[y]
+    return np.mean(np.sum((np.cumsum(P, 1) - np.cumsum(Y, 1))[:, :-1] ** 2, 1) / (len(CLASES) - 1))
 
 def metricas_por_t(df, P):
     filas = []
@@ -96,7 +100,8 @@ def metricas_por_t(df, P):
         y, p = df.loc[m, "y"].values, P[m]
         filas.append({"t": t,
                       "accuracy": accuracy_score(y, p.argmax(1)),
-                      "log_loss": log_loss(y, p, labels=CLASES)})
+                      "log_loss": log_loss(y, p, labels=CLASES),
+                      "rps": rps(y, p)})
     return pd.DataFrame(filas)
 
 
@@ -137,7 +142,7 @@ def bootstrap_ic(df, P, n=500, seed=0):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--datos", default="data/processed/instances.csv")
-    ap.add_argument("--salida", default="data/processed")
+    ap.add_argument("--salida", default="results")
     ap.add_argument("--repeticiones", type=int, default=3)
     a = ap.parse_args()
 
@@ -179,18 +184,18 @@ def main():
     res.to_csv(salida / "resultados.csv", index=False)
 
     # Tablas resumen
-    for met in ["accuracy", "log_loss"]:
+    for met in ["accuracy", "log_loss", "rps"]:
         tabla = res.pivot_table(index=["modelo", "variables"], columns="t", values=met)
         tabla["media"] = tabla.mean(axis=1)
         print(f"\n== {met} por checkpoint ==")
         print(tabla.round(3).to_string())
         tabla.round(3).to_csv(salida / f"tabla_{met}.csv")
 
-    # Mejora respecto al baseline (log-loss; negativo = mejora)
-    piv = res.pivot_table(index=["modelo", "t"], columns="variables", values="log_loss")
+    piv = res[res.variables != "-"].pivot_table(index=["modelo", "t"], columns="variables", values="log_loss")
     mejora = pd.DataFrame({
         "d_juego_vs_base": piv["+juego"] - piv["base"],
         "d_contexto_vs_base": piv["+contexto"] - piv["base"],
+        "d_contexto_vs_juego": piv["+contexto"] - piv["+juego"],
     })
     print("\n== Δ log-loss respecto al modelo base (negativo = mejora) ==")
     print(mejora.round(3).to_string())
@@ -198,7 +203,7 @@ def main():
 
     # Gráficos
     fig, ejes = plt.subplots(1, 2, figsize=(11, 4))
-    for ax, met, titulo in zip(ejes, ["log_loss", "accuracy"], ["Log-loss (menor es mejor)", "Accuracy"]):
+    for ax, met, titulo in zip(ejes, ["log_loss", "accuracy", "rps"], ["Log-loss (menor es mejor)", "Accuracy", "RPS"]):
         for (mod, var), g in res[res.variables != "-"].groupby(["modelo", "variables"]):
             if var == "+contexto" or var == "base":
                 ax.plot(g["t"], g[met], marker="o", ls="-" if var == "+contexto" else "--",
