@@ -42,7 +42,6 @@ Cada notebook guarda su resultado en `data/processed/` y el siguiente lo lee. Á
 
 | Notebook | Qué hace | Genera |
 | --- | --- | --- |
-| `notebooks/01_exploracion.ipynb` | Primera exploración de D2 | — |
 | `notebooks/02_tiros_fotmob.ipynb` | Lee los 104 JSON de FotMob; calcula tiros, tiros al arco, xG y goles acumulados por checkpoint; arma la etiqueta | `estado_d1.csv` |
 | `notebooks/03_union_y_dataset.ipynb` | Empareja los partidos de D1 y D2; agrega el contexto previo; calcula las diferencias A − B | `mapa_d1_d2.csv`, `instances.csv` |
 
@@ -50,14 +49,30 @@ Cada notebook guarda su resultado en `data/processed/` y el siguiente lo lee. Á
 
 **Resultado:** `data/processed/instances.csv`, con **520 instancias** (104 partidos × 5 checkpoints) y sin valores faltantes.
 
-## 4. Convenciones del proyecto
+## 4. Correr los experimentos
+
+```bash
+python scripts/04_modelos.py                  # unos 2 minutos
+python scripts/04_modelos.py --repeticiones 5 # más repeticiones
+```
+
+Se ejecuta desde la raíz del repositorio y lee `data/processed/instances.csv`. Genera en `results/`:
+
+| Archivo | Contenido |
+| --- | --- |
+| `tabla_log_loss.csv`, `tabla_accuracy.csv`, `tabla_rps.csv` | Métricas por modelo, conjunto de variables y checkpoint |
+| `resultados.csv` | Todas las métricas, con intervalos de confianza del 95 % (bootstrap por partido) |
+| `mejora_vs_base.csv` | Diferencia de log-loss al agregar cada bloque de variables |
+| `metricas_por_checkpoint.png` | Log-loss y accuracy por checkpoint |
+
+## 5. Convenciones del proyecto
 
 - **Equipo A** = el listado como local en el fixture; **equipo B** = el visitante. Todas las variables de equipo son diferencias **A − B**.
 - **Etiqueta `y`:** resultado al minuto 90 → `0` = gana A, `1` = empate, `2` = gana B. Los partidos con prórroga o penales cuentan como empate.
 - **Checkpoints:** 15, 30, 45, 60 y 75. El 45 incluye el tiempo añadido del primer tiempo. La prórroga y la tanda de penales nunca se usan.
 - **No usar** las estadísticas de `content.stats` (D1) ni de `match_team_stats.csv` (D2): son totales del partido completo y filtrarían el resultado.
 
-## 5. Verificaciones hechas (para el informe)
+## 6. Verificaciones hechas (para el informe)
 
 | Verificación | Resultado |
 | --- | --- |
