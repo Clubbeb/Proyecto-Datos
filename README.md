@@ -42,10 +42,8 @@ Cada notebook guarda su resultado en `data/processed/` y el siguiente lo lee. Á
 
 | Notebook | Qué hace | Genera |
 | --- | --- | --- |
-| `notebooks/02_tiros_fotmob.ipynb` | Lee los 104 JSON de FotMob; calcula tiros, tiros al arco, xG y goles acumulados por checkpoint; arma la etiqueta | `estado_d1.csv` |
-| `notebooks/03_union_y_dataset.ipynb` | Empareja los partidos de D1 y D2; agrega el contexto previo; calcula las diferencias A − B | `mapa_d1_d2.csv`, `instances.csv` |
-
-**Ojo con el orden si partes desde cero:** la celda del notebook 02 que verifica los autogoles lee `mapa_d1_d2.csv`, que se crea en el 03. Corre primero en el 03 solo las celdas que emparejan los partidos y guardan el mapa; después corre el 02 completo, y finalmente el 03 completo. (Esto se ordenará al pasar el código a scripts.)
+| `notebooks/02_union_partidos.ipynb` | Lee los 104 JSON de FotMob; calcula tiros, tiros al arco, xG y goles acumulados por checkpoint; arma la etiqueta | `estado_d1.csv` |
+| `notebooks/03_tiros_y_dataset.ipynb` | Empareja los partidos de D1 y D2; agrega el contexto previo; calcula las diferencias A − B | `mapa_d1_d2.csv`, `instances.csv` |
 
 **Resultado:** `data/processed/instances.csv`, con **520 instancias** (104 partidos × 5 checkpoints) y sin valores faltantes.
 
